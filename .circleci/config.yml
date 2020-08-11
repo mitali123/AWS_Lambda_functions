@@ -1,0 +1,26 @@
+version: 2.1
+jobs:
+  pr_check:
+    docker:
+      - image: circleci/python:3.8.3
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run: pwd
+      - run: sudo pip install virtualenv 
+      - run: sudo pip install awscli
+      - run: aws --version
+      - run: ls -al
+      - run: zip passwordReset.zip passwordReset.js 
+      - run: aws s3 cp passwordReset.zip s3://${bucket}/passwordReset.zip --region ${AWS_REGION}
+      - run: aws lambda --cli-connect-timeout 60 update-function-code --function-name passwordReset --region ${AWS_REGION} --s3-bucket ${bucket} --s3-key passwordReset.zip 
+
+      
+workflows:
+    pr_check_workflow:
+      jobs:
+        - pr_check:
+            filters:
+              branches:
+                only:
+                  - master
